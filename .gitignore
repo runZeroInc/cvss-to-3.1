@@ -1,0 +1,20 @@
+# Built gem artifacts
+*.gem
+pkg/
+
+# Bundler
+# Library gems do not commit Gemfile.lock — only applications do.
+# See: https://bundler.io/guides/rationale.html#libraries-not-to-lock
+Gemfile.lock
+.bundle/
+vendor/bundle/
+
+# RSpec
+.rspec_status
+coverage/
+
+# Temporary files
+tmp/
+
+# macOS
+.DS_Store
