@@ -183,11 +183,11 @@ RSpec.describe CvssTo31 do
       end
     end
 
-    context 'with a CVSS 2.0 vector — Medium complexity (maps to AC:H)' do
+    context 'with a CVSS 2.0 vector — Medium complexity (maps to AC:L, worst-case)' do
       let(:input) { 'AV:N/AC:M/Au:N/C:P/I:P/A:P' }
 
-      it 'maps AC:M to AC:H' do
-        expect(convert.vector).to include('/AC:H/')
+      it 'maps AC:M to AC:L' do
+        expect(convert.vector).to include('/AC:L/')
       end
     end
 

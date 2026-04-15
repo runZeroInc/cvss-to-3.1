@@ -60,8 +60,8 @@ CVSS 2.0 lacks some fields required by 3.1, so this conversion is approximate.
 | CVSS 2.0 metric | CVSS 2.0 value | CVSS 3.1 metric | CVSS 3.1 value | Rationale |
 |---|---|---|---|---|
 | AV | N / A / L | AV | N / A / L | Direct equivalents |
-| AC | L | AC | L | Low complexity stays Low |
-| AC | M / H | AC | H | Medium/High collapse to High |
+| AC | L / M | AC | L | Low/Medium collapse to Low (worst-case: maximizes score) |
+| AC | H | AC | H | High complexity stays High |
 | Au | N | PR | N | No authentication required |
 | Au | S / M | PR | H | Any authentication requirement maps to High privileges |
 | C / I / A | N | C / I / A | N | No impact |

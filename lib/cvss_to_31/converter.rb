@@ -20,8 +20,8 @@ module CvssTo31
   # | v2 metric | v2 value | v3.1 metric | v3.1 value | Rationale |
   # |-----------|----------|-------------|------------|-----------|
   # | AV        | N/A/L    | AV          | N/A/L      | Direct equivalents |
-  # | AC        | L        | AC          | L          | Low complexity stays Low |
-  # | AC        | M/H      | AC          | H          | Medium/High collapse to High (worst-case) |
+  # | AC        | L/M      | AC          | L          | Low/Medium collapse to Low (worst-case: maximises score) |
+  # | AC        | H        | AC          | H          | High complexity stays High |
   # | Au        | N        | PR          | N          | No authentication required |
   # | Au        | S/M      | PR          | H          | Any authentication ≈ high privilege required |
   # | C/I/A     | N        | C/I/A       | N          | No impact |
@@ -100,11 +100,11 @@ module CvssTo31
         end
       end
 
-      # CVSS v2 AC: L → L; M or H → H (worst-case: higher complexity scores harder)
+      # CVSS v2 AC: L/M → L (worst-case: collapse medium to low so the score is maximised); H → H
       def map_v2_ac(ac)
         case ac
-        when "L"      then "L"
-        when "M", "H" then "H"
+        when "L", "M" then "L"
+        when "H"      then "H"
         else raise Error, "Unknown CVSS v2 AC value: #{ac}"
         end
       end
