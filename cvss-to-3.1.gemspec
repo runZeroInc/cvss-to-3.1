@@ -5,7 +5,7 @@ require_relative 'lib/cvss_to_31/version'
 Gem::Specification.new do |spec|
   spec.name    = 'cvss-to-3.1'
   spec.version = CvssTo31::VERSION
-  spec.authors = ['todb']
+  spec.authors = ['Tod Beardsley']
   spec.email   = ['todb@runzero.com']
   spec.summary = 'Convert any CVSS vector (v2, v3.0, v4.0) to a normalised CVSS 3.1 score'
   spec.description = <<~DESC
