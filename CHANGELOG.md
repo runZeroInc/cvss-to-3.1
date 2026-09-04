@@ -2,8 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.0.1] - April XX, 2026
+## [1.0.0] - 2026-09-04
 
-### Added
+First public release
 
-- Initial release.
+## [0.0.1] - 2026-04-14
+
+Internal version
