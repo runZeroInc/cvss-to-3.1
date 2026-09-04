@@ -38,6 +38,16 @@ module CvssTo31
   # High or Low value → Changed; all None → Unchanged).  Victim/Consumer Impact
   # metrics (VC/VI/VA) are used for the v3.1 C/I/A values.
   class Converter
+
+    # CVSS 4.0 vectors can be the longest valid form because they include base,
+    # threat, environmental, and supplemental fields. Even a full environmental
+    # 4.0 vector remains well under 512 characters, so this should be fine to
+    # prevent DoS effects by offering stupid long vectors.
+    MAX_INPUT_LENGTH = 512
+
+    # No shell escapes or SQL escapes or any of that nonsense.
+    ALLOWED_CVSS_CHARACTER_PATTERN = /\A[A-Za-z0-9.:\/]+\z/
+
     class << self
       # Convert a CVSS vector to CVSS 3.1.
       #
@@ -48,10 +58,11 @@ module CvssTo31
       # @raise [CvssTo31::UnsupportedVersionError] If the CVSS version is not
       #   one of 2.0, 3.0, 3.1, or 4.0.
       def convert(input)
-        cvss = input.is_a?(String) ? CvssSuite.new(input) : input
+        vector = validate_input(input)
+        cvss = input.is_a?(String) ? CvssSuite.new(vector) : input
 
         unless cvss.respond_to?(:valid?) && cvss.valid?
-          raise Error, "Invalid CVSS vector: #{input.is_a?(String) ? input : input.vector}"
+          raise Error, "Invalid CVSS vector: #{vector}"
         end
 
         case cvss.version.to_s
@@ -65,6 +76,33 @@ module CvssTo31
       end
 
       private
+
+      def validate_input(input)
+        case input
+        when String
+          validate_vector_string(input)
+        when CvssSuite::Cvss
+          validate_vector_string(input.vector)
+        else
+          raise Error, "Invalid input type: expected String or CvssSuite::Cvss, got #{input.class}"
+        end
+      end
+
+      def validate_vector_string(vector)
+        unless vector.is_a?(String)
+          raise Error, 'Invalid CVSS input: expected a String value'
+        end
+
+        if vector.length > MAX_INPUT_LENGTH
+          raise Error, "Invalid CVSS input: value too long (#{vector.length} > #{MAX_INPUT_LENGTH})"
+        end
+
+        unless vector.match?(ALLOWED_CVSS_CHARACTER_PATTERN)
+          raise Error, 'Invalid CVSS input: only letters, numbers, periods, colons, and slashes are allowed'
+        end
+
+        vector
+      end
 
       def from_3_0(cvss)
         CvssSuite.new(cvss.vector.sub("CVSS:3.0", "CVSS:3.1"))
